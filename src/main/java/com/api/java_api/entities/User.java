@@ -1,27 +1,45 @@
 package com.api.java_api.entities;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity // Un algo en base de datos
-@Table // se define como tabla de base de datos
-@Builder // constructor de objetos
-@Data // getter y setters toEquals, toHash, toString
-@NoArgsConstructor // agrega el constructor vacio
-@AllArgsConstructor // agrega el constructor completo
+import java.util.List;
 
+@Entity
+@Table
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-    @Column()
-    private String nombre;
-    private int edad;
 
+    @Column
+    @NotEmpty
+    @Size(max = 30, message = "debe tener maximo 30 caracteres")
+    private String username;
+
+    @Column
+    @Email(message = "Email no valido")
+    @NotEmpty
+    private String email;
+
+    @Column
+    @NotEmpty
+    private String password;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Post> posts; // Un usuario puede tener múltiples posts
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Comment> comments; // Un usuario puede tener múltiples comentarios
 }
