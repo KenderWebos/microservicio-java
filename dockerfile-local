@@ -1,0 +1,31 @@
+# Fase de construcción con Maven
+FROM maven:3.8.7-eclipse-temurin-17 AS build
+WORKDIR /app
+
+# Copiar primero el POM para cachear dependencias
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copiar código fuente
+COPY src src
+
+# Empaquetar la aplicación
+RUN mvn package -DskipTests
+
+# Fase de ejecución
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+
+# Configurar usuario no-root (seguridad)
+RUN addgroup --system spring && adduser --system spring --ingroup spring
+USER spring:spring
+
+# Copiar el JAR construido
+COPY --from=build /app/target/*.jar app.jar
+
+# Configuraciones básicas
+EXPOSE 8080
+ENV TZ=America/Mexico_City
+
+# Entrada optimizada para Spring Boot
+ENTRYPOINT ["java", "-jar", "app.jar"]
