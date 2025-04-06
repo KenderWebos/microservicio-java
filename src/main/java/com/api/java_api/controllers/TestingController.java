@@ -15,8 +15,7 @@ import java.util.List;
 @RequestMapping("/api/v1/")
 public class TestingController {
 
-
-    @GetMapping("/holaMundo")
+    @GetMapping("/holamundo")
     public String nombregenerico(){
         return "Hola Mundo!";
     }
