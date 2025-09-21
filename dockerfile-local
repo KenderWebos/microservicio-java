@@ -23,9 +23,14 @@ USER spring:spring
 # Copiar el JAR construido
 COPY --from=build /app/target/*.jar app.jar
 
-# Configuraciones básicas
-EXPOSE 8080
+# Variables de entorno por defecto
+ENV MYSQL_URL=jdbc:mysql://host.docker.internal:3306/HTDB
+ENV MYSQL_USERNAME=admin
+ENV MYSQL_PASSWORD=password
 ENV TZ=America/Mexico_City
+
+# Exponer puerto 9090 (el que usa la aplicación)
+EXPOSE 9090
 
 # Entrada optimizada para Spring Boot
 ENTRYPOINT ["java", "-jar", "app.jar"]

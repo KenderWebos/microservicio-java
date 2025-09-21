@@ -29,6 +29,11 @@ spring.datasource.password=tu_contraseña
 spring.jpa.hibernate.ddl-auto=update
 ```
 
+La aplicación también acepta la configuración a través de variables de entorno:
+- `MYSQL_URL`: URL de conexión a la base de datos
+- `MYSQL_USERNAME`: Usuario de la base de datos
+- `MYSQL_PASSWORD`: Contraseña de la base de datos
+
 ### Puerto
 
 El servicio se ejecuta por defecto en el puerto 9090. Puedes cambiar esto en `application.properties`:
@@ -62,7 +67,7 @@ El proyecto incluye dos archivos Dockerfile:
 1. `dockerfile` - Para despliegue en ARM (ej. Raspberry Pi)
 2. `dockerfile-local` - Para despliegue en arquitecturas x86/x64
 
-Para construir la imagen y ejecutar el contenedor:
+#### Uso básico de Docker
 
 ```bash
 # Para ARM
@@ -72,6 +77,78 @@ docker run -p 9090:9090 microservicio-usuarios
 # Para arquitecturas estándar
 docker build -t microservicio-usuarios -f dockerfile-local .
 docker run -p 9090:9090 microservicio-usuarios
+```
+
+#### Configuración de la base de datos en Docker
+
+Para conectar a una base de datos específica, puedes pasar variables de entorno:
+
+```bash
+docker run -p 9090:9090 \
+  -e MYSQL_URL=jdbc:mysql://tu-servidor-mysql:3306/tu_db \
+  -e MYSQL_USERNAME=tu_usuario \
+  -e MYSQL_PASSWORD=tu_contraseña \
+  microservicio-usuarios
+```
+
+#### Conexión a MySQL local desde Docker
+
+Para conectar a MySQL ejecutándose en tu máquina host desde Docker:
+
+```bash
+# En Windows/Mac (usando Docker Desktop)
+docker run -p 9090:9090 \
+  -e MYSQL_URL=jdbc:mysql://host.docker.internal:3306/tu_db \
+  -e MYSQL_USERNAME=tu_usuario \
+  -e MYSQL_PASSWORD=tu_contraseña \
+  microservicio-usuarios
+
+# En Linux (necesitas usar la IP de la red del host)
+docker run -p 9090:9090 \
+  -e MYSQL_URL=jdbc:mysql://172.17.0.1:3306/tu_db \
+  -e MYSQL_USERNAME=tu_usuario \
+  -e MYSQL_PASSWORD=tu_contraseña \
+  microservicio-usuarios
+```
+
+#### Usando Docker Compose (recomendado)
+
+Crea un archivo `docker-compose.yml` en la raíz del proyecto:
+
+```yaml
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile-local  # o dockerfile para ARM
+    ports:
+      - "9090:9090"
+    environment:
+      - MYSQL_URL=jdbc:mysql://db:3306/usersdb
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=rootpassword
+    depends_on:
+      - db
+  
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=usersdb
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
+```
+
+Y ejecuta con:
+
+```bash
+docker-compose up -d
 ```
 
 ## Endpoints de la API
@@ -126,6 +203,19 @@ El servicio implementa un manejo centralizado de errores que proporciona respues
 - **404 Not Found**: Recurso no encontrado
 - **409 Conflict**: Recursos duplicados (email ya registrado)
 - **500 Internal Server Error**: Error interno del servidor
+
+## Solución de problemas comunes
+
+### Problemas de conexión a la base de datos en Docker
+
+Si experimentas errores como "Unable to determine Dialect without JDBC metadata", asegúrate de:
+
+1. Verificar que la base de datos MySQL esté accesible desde el contenedor Docker
+2. Comprobar que las credenciales de acceso son correctas
+3. Usar la dirección correcta para tu entorno:
+   - En Docker Desktop: `host.docker.internal` para referenciar al host
+   - En Linux: usar la IP de la interfaz docker0 (generalmente `172.17.0.1`)
+   - Si usas docker-compose, usar el nombre del servicio como hostname
 
 ## Seguridad
 
